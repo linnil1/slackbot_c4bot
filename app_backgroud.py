@@ -6,6 +6,7 @@ import time
 import re
 
 import configuration
+import sticker
 
 token = configuration.token
 client = slack.WebClient(token=token)
@@ -22,6 +23,19 @@ def echo(message):
 
     response = client.chat_postMessage(**rep)
     pprint(response['message'])
+    print("Response Done")
+
+
+def responseSticker(message):
+    """Google Search a image"""
+    keyword = message.get("text")
+    url = sticker.imageSearch(keyword)
+    blocks = sticker.imageBlock(keyword, url)
+
+    response = client.chat_postMessage(
+                   channel=message["channel"],
+                   blocks=blocks)
+    pprint(response["message"])
     print("Response Done")
 
 
@@ -44,6 +58,9 @@ while True:
 
         if "c4bot" in message.get('text'):
             echo(message)
+
+        if re.match(r"^(?!http(s)*:)\w+\.(jpg|jpeg|png|gif)$", message.get('text')):
+            responseSticker(message)
 
     # catech all the error and move the task to queue_fail
     # except slack.errors.SlackApiError as e:
