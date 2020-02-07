@@ -6,8 +6,9 @@
 * Google custom search engine and key
 * ssl certification
 * crontab
+* Door opening webserver that receive door opening signal
 
-Example of data dictionary
+* Example of data dictionary
 ```
 data/
 ├── fullchain.pem     # ssl cert
@@ -15,21 +16,26 @@ data/
 └── credentials.json  # googlesheet key
 ```
 
-and edit `configuration.example.py` to `configuration.py`
+* Edit `configuration.example.py` to `configuration.py`
 
-Add meeting notification by crontab
+* Add meeting notification by crontab
 
 `crontab job.txt`
 
-Final step: install python package dependency
+* Install python package dependency
 
 `pip3 install requirments.txt`
+
+* Create door server self-signed ssl
+
+`openssl req -subj '/CN=localhost' -x509 -newkey rsa:2048 -nodes -days 365 -keyout data/self_key.pem -out data/self_cert.pem`
 
 
 ## Feature
 * Using webhook get the event from slack
 * Google search image for you. e.g. `我就爛.jpg`
 * Meeting notification from Google Sheet
+* Open the door by specific command
 
 
 ## Usage
@@ -41,3 +47,5 @@ This app can run in two separate threads.
 python3 app.py
 python3 app_backgroud.py
 ```
+
+The example of door opening server is at `door_server.py`

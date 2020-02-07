@@ -6,3 +6,7 @@ channel_testing = ""  # slack channel for testing
 channel_meeting = ""  # slack channel for posting meeting data
 google_sheet_id = ""  # google sheet id for meeting
 google_sheet_range = 'MeetingDate!A4:G22' # google sheet range gor sheet id
+door_url = "http://localhost:12123/door-open"
+door_serect = ""
+door_message = "芝麻開門"
+channel_door = ""

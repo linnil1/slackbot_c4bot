@@ -7,10 +7,11 @@ import re
 
 import configuration
 import sticker
+import door_open
 
 token = configuration.token
 client = slack.WebClient(token=token)
-sticker_regex = r"^(?!http(s)*:).+\.(jpg|jpeg|png|gif)$"
+sticker_regex = re.compile(r"^(?!http(s)*:).+\.(jpg|jpeg|png|gif)$")
 
 
 def readName(id):
@@ -21,10 +22,10 @@ def readName(id):
 def echo(message):
     """Echo to person who call c4bot"""
     rep = {
-        'channel': message["channel"],
+        'channel': message['channel'],
         'text': f"Hello <@{message['user']}>!",
     }
-    if message.get("thread_ts"):
+    if message.get('thread_ts'):
         rep['thread_ts'] = message['thread_ts']
 
     response = client.chat_postMessage(**rep)
@@ -40,9 +41,9 @@ def stickerResponse(message):
     blocks = sticker.imageBlock(text, url)
 
     response = client.chat_postMessage(
-                   channel=message["channel"],
+                   channel=message['channel'],
                    blocks=blocks)
-    pprint(response["message"])
+    pprint(response['message'])
     print("Response Done")
 
 
@@ -52,9 +53,9 @@ def doorOpen(message):
         reaction = "heavy_check_mark"
     response = client.reactions_add(
             name=reaction,
-            channel=message["channel"],
-            timestamp=message["ts"])
-    pprint(response["message"])
+            channel=message['channel'],
+            timestamp=message['ts'])
+    pprint(response['message'])
     print("Response Done")
 
 
@@ -78,7 +79,7 @@ while True:
     # run each module
     try:
         # not text
-        if message.get("subtype") or message.get("bot_id") \
+        if message.get('subtype') or message.get('bot_id') \
                 or not message.get('text'):
             success(name)
             continue
@@ -87,21 +88,27 @@ while True:
             echo(message)
 
         # not in thread
-        if not message.get("thread_ts"):
+        if message.get('thread_ts'):
             success(name)
             continue
 
         if sticker_regex.match(message.get('text')):
             stickerResponse(message)
 
+        if message.get('channel') == configuration.channel_testing and \
+           message.get('text') == configuration.door_message:
+            doorOpen(message)
+
     # catech all the error and move the task to queue_fail
     # except slack.errors.SlackApiError as e:
     except BaseException as e:
         print(e)
         os.rename(name, "queue_fail/" + name[6:])
+        """
         response = client.chat_postMessage(
                         text=str(message) + " : " + str(e),
                         channel=configuration.channel_testing)
+        """
         continue
 
     # Success
