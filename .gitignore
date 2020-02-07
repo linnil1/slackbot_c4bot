@@ -133,3 +133,5 @@ dmypy.json
 *.swo
 data/
 configuration.py
+queue
+queue_fail

@@ -10,6 +10,12 @@ import sticker
 
 token = configuration.token
 client = slack.WebClient(token=token)
+sticker_regex = r"^(?!http(s)*:).+\.(jpg|jpeg|png|gif)$"
+
+
+def readName(id):
+    response = client.users_info(user=id)
+    return response.data['user']['profile']['display_name']
 
 
 def echo(message):
@@ -26,17 +32,35 @@ def echo(message):
     print("Response Done")
 
 
-def responseSticker(message):
+def stickerResponse(message):
     """Google Search a image"""
     keyword = message.get("text")
     url = sticker.imageSearch(keyword)
-    blocks = sticker.imageBlock(keyword, url)
+    text = keyword + f" from " + readName(message['user'])
+    blocks = sticker.imageBlock(text, url)
 
     response = client.chat_postMessage(
                    channel=message["channel"],
                    blocks=blocks)
     pprint(response["message"])
     print("Response Done")
+
+
+def doorOpen(message):
+    reaction = "x"
+    if door_open.doorOpen():
+        reaction = "heavy_check_mark"
+    response = client.reactions_add(
+            name=reaction,
+            channel=message["channel"],
+            timestamp=message["ts"])
+    pprint(response["message"])
+    print("Response Done")
+
+
+def success(name):
+    os.remove(name)
+    print("OK")
 
 
 # main funciton
@@ -53,22 +77,32 @@ while True:
 
     # run each module
     try:
-        if not message.get("subtype") and not message.get("bot_id") and not message.get('text'):
+        # not text
+        if message.get("subtype") or message.get("bot_id") \
+                or not message.get('text'):
+            success(name)
             continue
 
         if "c4bot" in message.get('text'):
             echo(message)
 
-        if re.match(r"^(?!http(s)*:)\w+\.(jpg|jpeg|png|gif)$", message.get('text')):
-            responseSticker(message)
+        # not in thread
+        if not message.get("thread_ts"):
+            success(name)
+            continue
+
+        if sticker_regex.match(message.get('text')):
+            stickerResponse(message)
 
     # catech all the error and move the task to queue_fail
     # except slack.errors.SlackApiError as e:
     except BaseException as e:
         print(e)
         os.rename(name, "queue_fail/" + name[6:])
+        response = client.chat_postMessage(
+                        text=str(message) + " : " + str(e),
+                        channel=configuration.channel_testing)
         continue
 
     # Success
-    os.remove(name)
-    print("OK")
+    success(name)

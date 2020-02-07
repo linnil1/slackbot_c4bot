@@ -5,6 +5,7 @@
 * Google sheet api
 * Google custom search engine and key
 * ssl certification
+* crontab
 
 Example of data dictionary
 ```
@@ -15,6 +16,10 @@ data/
 ```
 
 and edit `configuration.example.py` to `configuration.py`
+
+Add meeting notification by crontab
+
+`crontab job.txt`
 
 Final step: install python package dependency
 

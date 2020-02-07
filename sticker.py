@@ -1,6 +1,7 @@
 from pprint import pprint
 import requests
 import configuration
+import random
 
 
 def imageSearch(keyword):
@@ -10,21 +11,32 @@ def imageSearch(keyword):
     The parameters are shown in https://developers.google.com/custom-search/v1/cse/list
     """
     isgif = keyword.endswith('.gif')
-    keyword = keyword[:keyword.rfind(".")]
+    # keyword = keyword[:keyword.rfind(".")]
     resp = requests.get("https://www.googleapis.com/customsearch/v1", params={
             'q': keyword,
-            'num': 1,
+            'num': 5,
             'hl': "zh-TW",
+            # 'lr': "lang_zh-TW",
+            'searchType': 'image',
             'fileType':  'gif' if isgif else None,
             'cx': configuration.search_cx,
-            'searchType': 'image',
             'key': configuration.search_key,
+            'safe': "medium",
             },
             headers={'Accept': "application/json"})
     data = resp.json()
-    pprint(data)
-    link = data.get('items')[0]['link']
-    return link
+    items = data.get('items')
+    print(keyword)
+    pprint(items)
+    links = [item for item in items if item["mime"] not in ["image/", "image/webp"]]
+    # random.shuffle(links) 
+    link = random.choice(links)
+
+    if requests.get(link['link']).status_code == 200:
+        return link['link']
+    else:
+        return link['image']['thumbnailLink']
+    # raise ValueError("Cannot search good image")
 
 
 def imageDownload(url, path):
@@ -57,10 +69,13 @@ if __name__ == "__main__":
     client = slack.WebClient(token=token)
     channel_id = configuration.channel_testing
 
-    keyword = "我就爛.gif"
+    keyword = "jojo.jpg"
+    # keyword = "我就爛.jpg"
     url = imageSearch(keyword)
+    """
     blocks = imageBlock(keyword, url)
     response = client.chat_postMessage(
                    channel=channel_id,
                    blocks=blocks)
     pprint(response["message"])
+    """

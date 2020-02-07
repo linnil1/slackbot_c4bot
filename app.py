@@ -25,6 +25,8 @@ def message(data):
     print("Get message")
     pprint(data)
     message = data["event"]
+    if not message:
+        return "OK"
     name = message["ts"]
     json.dump(message, open(f"queue/{name}.json", "w"))
     return "OK"
