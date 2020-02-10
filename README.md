@@ -7,6 +7,7 @@
 * ssl certification
 * crontab
 * Door opening webserver that receive door opening signal
+* Create slack commands.
 
 * Example of data dictionary
 ```
@@ -36,6 +37,7 @@ data/
 * Google search image for you. e.g. `我就爛.jpg`
 * Meeting notification from Google Sheet
 * Open the door by specific command
+* Add emoji of word(chinese) by command
 
 
 ## Usage

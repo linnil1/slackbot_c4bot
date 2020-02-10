@@ -1,4 +1,6 @@
 token = "xoxb-"       # slackbot token
+user_token = ""       # slack token of normal user(Upload emoji)
+web_port = 443        # the port to catch web event
 signing_secret = ""   # slackbot signing secret (for event subscription)
 search_key = ""       # google search api key
 search_cx = ""        # google custom search engine key

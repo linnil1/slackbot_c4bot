@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from pprint import pprint
 from slackeventsapi import SlackEventAdapter
 import json
@@ -32,10 +32,23 @@ def message(data):
     return "OK"
 
 
+@app.route("/command", methods=["POST"])
+def command():
+    data = dict(request.form)
+    print(data)
+    if not data.get('text'):
+        return "Not text"
+    # save to queue
+    data["type"] = "command"
+    name = data['trigger_id']
+    json.dump(data, open(f"queue/{name}.json", "w"))
+    return ""
+
+
 # run
 os.makedirs("queue", exist_ok=True)
 os.makedirs("queue_fail", exist_ok=True)
 app.run(host="0.0.0.0",
-        port=12121,
+        port=configuration.web_port,
         ssl_context=('data/fullchain.pem', 'data/privkey.pem'),
         debug=True)

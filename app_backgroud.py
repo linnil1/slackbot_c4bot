@@ -4,10 +4,12 @@ import json
 import os
 import time
 import re
+import requests
 
 import configuration
 import sticker
 import door_open
+import emoji_word
 
 token = configuration.token
 client = slack.WebClient(token=token)
@@ -59,6 +61,32 @@ def doorOpen(message):
     print("Response Done")
 
 
+def sendCommandResp(text):
+    response = requests.post(message.get('response_url'),
+                             json={'text': text})
+    assert(response.status_code == 200)
+    print(response.content)
+
+
+def emojiwordAdd(message):
+    try:
+        text = message.get('text')
+        ind = text.find(' ')
+        if ind <= 0 or ind == len(text) - 1:
+            sendCommandResp("Syntax Error")
+            return "Syntax Error"
+        name = "bot-" + text[:ind]
+        emoji_word.emojiUpload(name, text[ind + 1:])
+        sendCommandResp(f"Ok :{name}:")
+        print("Response Done")
+    except slack.errors.SlackClientError as e:
+        sendCommandResp(str(e))
+        print("Response Done")
+    except BaseException as e:
+        sendCommandResp("Something Error")
+        raise e
+
+
 def success(name):
     os.remove(name)
     print("OK")
@@ -74,10 +102,15 @@ while True:
     name = "queue/" + messages[0]
     message = json.load(open(name))
     pprint(message)
-    print(name)
+    print("READ", name)
 
     # run each module
     try:
+        if message.get('type') == "command":
+            if message.get('command').startswith("/emojiword"):
+                emojiwordAdd(message)
+                success(name)
+                continue
         # not text
         if message.get('subtype') or message.get('bot_id') \
                 or not message.get('text'):
