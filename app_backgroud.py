@@ -106,11 +106,12 @@ while True:
 
     # run each module
     try:
+        # commands
         if message.get('type') == "command":
             if message.get('command').startswith("/emojiword"):
                 emojiwordAdd(message)
-                success(name)
-                continue
+            success(name)
+            continue
         # not text
         if message.get('subtype') or message.get('bot_id') \
                 or not message.get('text'):

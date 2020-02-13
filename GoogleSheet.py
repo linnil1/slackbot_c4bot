@@ -50,7 +50,7 @@ def getSheet(id, loc):
 
 def saveSheet(data):
     """Save the data to csv"""
-    with open("data/tmp.csv", "w", newline='') as f:
+    with open("data/tmp_meeting.csv", "w", newline='') as f:
         writer = csv.writer(f)
         for d in data:
             writer.writerow(d)
@@ -58,7 +58,7 @@ def saveSheet(data):
 
 def readSheet():
     """Read data from csv"""
-    with open("data/tmp.csv", newline='') as f:
+    with open("data/tmp_meeting.csv", newline='') as f:
         reader = csv.reader(f)
         return list(reader)
 

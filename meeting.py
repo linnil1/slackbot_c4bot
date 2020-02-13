@@ -16,7 +16,7 @@ def meetingBlock(date, meeting_people, comment=""):
     sections = []
     for head in meeting_people:
         if meeting_people[head]:
-            sections.append(f"*{head}*: " + ", ".join(meeting_people[head]]))
+            sections.append(f"*{head}*: " + ", ".join(meeting_people[head]))
     return [
         {
             "type": "section",
@@ -87,7 +87,8 @@ def parseData(table):
             header[2]: [person for person in data[2:4] if person and person != "-"],
             header[4]: [person for person in data[4:6] if person and person != "-"],
     }
-    return date, meeting_people, data[-1]
+    comment = data[6] if len(data) > 6 else ""
+    return date, meeting_people, comment
 
 
 if __name__ == "__main__":

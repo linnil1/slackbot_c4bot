@@ -50,5 +50,5 @@ os.makedirs("queue", exist_ok=True)
 os.makedirs("queue_fail", exist_ok=True)
 app.run(host="0.0.0.0",
         port=configuration.web_port,
-        ssl_context=('data/fullchain.pem', 'data/privkey.pem'),
+        ssl_context=configuration.ssl_context,
         debug=True)

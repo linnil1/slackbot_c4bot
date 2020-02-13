@@ -16,7 +16,7 @@ params = {'align': "center",
 }
 token = configuration.user_token
 client = slack.WebClient(token=token)
-filename = "tmp.jpg"
+filename = "data/tmp_emojiword.jpg"
 
 
 def imageDownload(url, params):
