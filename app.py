@@ -1,5 +1,4 @@
 import os
-# from aiohttp import web
 from slack_bolt.async_app import AsyncApp
 import logging
 
@@ -14,13 +13,22 @@ app = AsyncApp(token=configuration.token,
 
 @app.event("message")
 async def event_read_message(body, say, logger):
-    logger.info(body)
+    # logger.info(body)
     pass
-    # await say("What's up?")
 
 
 @app.event("app_home_opened")
 async def handle_app_home_opened_events(body, say, logger):
+    await say(blocks=[
+        {
+            'type': "section",
+            'text': {
+                'type': "mrkdwn",
+                'text': "Hi. I'm c4bot, a specific bot for c4lab\n"
+                        "Here is my repo <https://github.com/linnil1/slackbot_c4bot>"
+            },
+        },
+    ])
     logger.info(body)
 
 

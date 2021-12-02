@@ -1,75 +1,121 @@
-import pickle
-import os.path
-import csv
-from pprint import pprint
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
+from datetime import datetime, timedelta
+from slack_sdk.web.async_client import AsyncWebClient
+from aiogoogle import Aiogoogle
+
 import configuration
 
 
-def getSheet(id, loc):
-    """
-    Call api to get sheet csv data.
+class GoogleSheet:
+    date_name = "日期"
+    client = AsyncWebClient(token=configuration.token)
+    timedelta_tpe = 8
 
-    More details are in https://developers.google.com/sheets/api/quickstart/python.
-    """
-    SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
-    """
-    Shows basic usage of the Sheets API.
-    Prints values from a sample spreadsheet.
-    """
-    creds = None
-    # The file token.pickle stores the user's access and refresh tokens, and is
-    # created automatically when the authorization flow completes for the first
-    # time.
-    if os.path.exists('data/token.pickle'):
-        with open('data/token.pickle', 'rb') as token:
-            creds = pickle.load(token)
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                'data/credentials.json', SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open('data/token.pickle', 'wb') as token:
-            pickle.dump(creds, token)
+    def __init__(self, channel=configuration.meeting_channel):
+        self.channel = channel
 
-    service = build('sheets', 'v4', credentials=creds)
+    async def getRawTable(self):
+        """ Get google sheet from web """
+        async with Aiogoogle(api_key=configuration.google_key) as ag:
+            sheet = await ag.discover('sheets', 'v4')
+            result = await ag.as_api_key(
+                sheet.spreadsheets.values.get(spreadsheetId=configuration.google_sheet_id,
+                                             range=configuration.google_sheet_range)
+            )
+            return result['values']
 
-    # Call the Sheets API
-    sheet = service.spreadsheets()
-    result = sheet.values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID,
-                                range=SAMPLE_RANGE_NAME).execute()
-    values = result.get('values', [])
-    return values
+    async def getTable(self):
+        """ Array to dict """
+        tables = await self.getRawTable()
+        # tables = [['周次', '日期', '報告人', '報告人'],
+        #           ['', '9/1', '弘曄', '文策']]
 
+        # add suffix for duplicated header
+        header = tables[0]
+        num = {}
+        for i, v in enumerate(header):
+            if v in num:
+                num[v] += 1
+                header[i] += str(num[v])
+            else:
+                num[v] = 0
 
-def saveSheet(data):
-    """Save the data to csv"""
-    with open("data/tmp_meeting.csv", "w", newline='') as f:
-        writer = csv.writer(f)
-        for d in data:
-            writer.writerow(d)
+        # add year on date string
+        df = tables[1:]
+        ind_date = header.index(self.date_name)
+        year = configuration.meeting_start_year
+        prev_date = datetime(year, 1, 1)
+        for i in df:
+            while True:
+                tmp_date = datetime(year, int(i[ind_date].split('/')[0]), int(i[ind_date].split('/')[1]),
+                                    configuration.meeting_start_hour, configuration.meeting_start_minutes)
+                if tmp_date < prev_date:
+                    year += 1
+                else:
+                    break
+            i[ind_date] = prev_date = tmp_date
 
+        # array to dict
+        data = []
+        for row in df:
+            tmp_row = {header[i]: row[i] for i in range(min(len(row), len(header)))}
+            data.append(tmp_row)
+        return data
 
-def readSheet():
-    """Read data from csv"""
-    with open("data/tmp_meeting.csv", newline='') as f:
-        reader = csv.reader(f)
-        return list(reader)
+    async def notify(self, row):
+        """ Format the text """
+        await self.client.chat_postMessage(blocks=[
+            *[{
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": f"{k}: *{v}*"
+                }
+            } for k, v in row.items()],
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "請在 Meeting 前提供 paper 的連結  並記得把投影片放在 c4lab 的 google drive"
+                }
+            },
+            {
+                "type": "divider"
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": "Notified automatically from [c4bot](https://github.com/linnil1/slackbot_c4bot)",
+                    },
+                    {
+                        "type": "mrkdwn",
+                        "text": "[Meeting sheet](https://docs.google.com/spreadsheets/d/" + \
+                                configuration.google_sheet_id + ")"
+                    }
+                ]
+            }
+        ], channel=self.channel)
+
+    async def main(self):
+        """ Download sheet and notify who will be next """
+        from pprint import pprint
+        tables = await self.getTable()
+        pprint(tables)
+        now = datetime.now() + timedelta(hours=self.timedelta_tpe)
+        print(now)
+
+        # find the next studuents after today's meeting
+        row = list(filter(lambda i: i[self.date_name] > now, tables))
+        if not len(row):
+            print("Empty sheet")
+            return False
+        row = min(row, key=lambda i: i[self.date_name])
+
+        await self.notify(row)
+        return True
 
 
 if __name__ == "__main__":
-    # save sheet to csv
-    SAMPLE_SPREADSHEET_ID = configuration.google_sheet_id
-    SAMPLE_RANGE_NAME = configuration.google_sheet_range
-    result = getSheet(SAMPLE_SPREADSHEET_ID, SAMPLE_RANGE_NAME)
-    pprint(result)
-    saveSheet(result)
-
-    # read sheet from csv
-    pprint(readSheet())
+    import asyncio
+    asyncio.run(GoogleSheet("DSY9Z1S8J").main())

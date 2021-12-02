@@ -1,3 +1,4 @@
 aiohttp
 slack_sdk
 slack_bolt
+aiogoogle
