@@ -1,53 +1,73 @@
 # c4bot: Slack bot for c4lab
 
-## Setup
-* Custom Slackbot
-* Google sheet api
-* Google custom search engine and key
-* ssl certification
-* crontab
-* Door opening webserver that receive door opening signal
-* Create slack commands.
-
-* Example of data dictionary
-```
-data/
-├── fullchain.pem     # ssl cert
-├── privkey.pem       # ssl key
-└── credentials.json  # googlesheet key
-```
-
-* Edit `configuration.example.py` to `configuration.py`
-
-* Add meeting notification by crontab
-
-`crontab job.txt`
-
-* Install python package dependency
-
-`pip3 install requirments.txt`
-
-* Create door server self-signed ssl
-
-`openssl req -subj '/CN=localhost' -x509 -newkey rsa:2048 -nodes -days 365 -keyout data/self_key.pem -out data/self_cert.pem`
-
-
 ## Feature
-* Using webhook get the event from slack
-* Google search image for you. e.g. `我就爛.jpg`
 * Meeting notification from Google Sheet
-* Open the door by specific command
 * Add emoji of word(chinese) by command
 
+## Warning
 
-## Usage
-This app can run in two separate threads.
-`app.py` is the webserver to collect message events.
-`app_backgroud.py` response from message events.
+Setup a webserver like nginx or apache and trun on ssl(https), don't expose the endpoint with plain text
 
+## Install
+
+``` bash
+git clone git@github.com:linnil1/slackbot_c4bot.git
+cd slackbot_c4bot
+pip3 install requirments.txt
 ```
+
+Note: I test on python3.10
+
+## Setting
+
+### Slack
+
+Install your own app. [tutorial](https://api.slack.com/start/building/bolt-python)
+
+Go to [Slack API site](https://api.slack.com/), configure the app you choose and
+
+set Event API Request URL `https://{host}:{port}/slack/events`
+
+with scope
+```
+app_mentions:read
+commands
+im:read
+im:write
+reactions:read
+reactions:write
+users:read
+emoji:read
+```
+
+and slash command
+``` yml
+  slash_commands:
+    - command: /emojiword
+      url: https://{host}:{port}/slack/events
+      description: Add emoji of word
+      usage_hint: "[emoji_name] [emoji_text(allow newline)]"
+      should_escape: false
+```
+
+### Google
+
+Create new project. [turoial](https://developers.google.com/workspace/guides/create-project)
+
+Go to [GCP console](https://console.cloud.google.com/apis/credentials), choose the app you create and
+
+enable google sheet api and create a APIkey
+
+
+## Run
+Edit `configuration.example.py` to `configuration.py`
+
+``` bash
 python3 app.py
-python3 app_backgroud.py
 ```
 
-The example of door opening server is at `door_server.py`
+## Result
+1. Emojiword
+![](https://raw.githubusercontent.com/linnil1/slackbot_c4bot/master/emojiword.png)
+2. Auto meeting nofication
+![](https://raw.githubusercontent.com/linnil1/slackbot_c4bot/master/automeetnotify.png)
