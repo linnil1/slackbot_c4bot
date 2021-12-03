@@ -29,10 +29,10 @@ class Emoji:
     client = AsyncWebClient(token=configuration.token)
 
     def __init__(self, name, word):
-        """ 
+        """
         Parameter:
           name(str): filename-like string
-          word(str): The text you want to generate, 
+          word(str): The text you want to generate,
         """
         if not re.match(r"^\w+$", name):
             raise ValueError(f"Bad Name: {name}")
@@ -74,7 +74,7 @@ class Emoji:
         return os.path.exists(self.fname)
 
     async def isUpload(self):
-        response = await self.client.emoji_list() 
+        response = await self.client.emoji_list()
         emojis = response.data['emoji']
         return self.name in emojis.keys()
 

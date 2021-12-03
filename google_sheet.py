@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from pprint import pprint
 from slack_sdk.web.async_client import AsyncWebClient
 from aiogoogle import Aiogoogle
 
@@ -18,16 +19,17 @@ class GoogleSheet:
         async with Aiogoogle(api_key=configuration.google_key) as ag:
             sheet = await ag.discover('sheets', 'v4')
             result = await ag.as_api_key(
-                sheet.spreadsheets.values.get(spreadsheetId=configuration.google_sheet_id,
-                                             range=configuration.google_sheet_range)
+                sheet.spreadsheets.values.get(
+                    spreadsheetId=configuration.google_sheet_id,
+                    range=configuration.google_sheet_range)
             )
             return result['values']
 
     async def getTable(self):
-        """ Array to dict """
+        """ Clean data and transfer array to dict """
         tables = await self.getRawTable()
         # tables = [['周次', '日期', '報告人', '報告人'],
-        #           ['', '9/1', '弘曄', '文策']]
+        #           ['', '9/1', 'xx', 'oo']]
 
         # add suffix for duplicated header
         header = tables[0]
@@ -46,8 +48,11 @@ class GoogleSheet:
         prev_date = datetime(year, 1, 1)
         for i in df:
             while True:
-                tmp_date = datetime(year, int(i[ind_date].split('/')[0]), int(i[ind_date].split('/')[1]),
-                                    configuration.meeting_start_hour, configuration.meeting_start_minutes)
+                tmp_date = datetime(year,
+                                    int(i[ind_date].split('/')[0]),
+                                    int(i[ind_date].split('/')[1]),
+                                    configuration.meeting_start_hour,
+                                    configuration.meeting_start_minutes)
                 if tmp_date < prev_date:
                     year += 1
                 else:
@@ -55,15 +60,23 @@ class GoogleSheet:
             i[ind_date] = prev_date = tmp_date
 
         # array to dict
-        data = []
-        for row in df:
-            tmp_row = {header[i]: row[i] for i in range(min(len(row), len(header)))}
-            data.append(tmp_row)
+        data = [dict(zip(header, row)) for row in df]
         return data
 
     async def notify(self, row):
-        """ Format the text """
+        """
+        Format the text
+
+        Reference: https://api.slack.com/reference/block-kit/blocks
+        """
         await self.client.chat_postMessage(blocks=[
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Meeting 通知"
+                }
+            },
             *[{
                 "type": "section",
                 "text": {
@@ -72,25 +85,27 @@ class GoogleSheet:
                 }
             } for k, v in row.items()],
             {
+                "type": "divider"
+            },
+            {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": "請在 Meeting 前提供 paper 的連結  並記得把投影片放在 c4lab 的 google drive"
+                    "text": "請在 Meeting 前提供 paper 的連結  "
+                            "並記得把投影片放在 c4lab 的 google drive"
                 }
-            },
-            {
-                "type": "divider"
             },
             {
                 "type": "context",
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": "Notified automatically from [c4bot](https://github.com/linnil1/slackbot_c4bot)",
+                        "text": "Notified automatically from "
+                                "[c4bot](https://github.com/linnil1/slackbot_c4bot)",
                     },
                     {
                         "type": "mrkdwn",
-                        "text": "[Meeting sheet](https://docs.google.com/spreadsheets/d/" + \
+                        "text": "[Meeting sheet](https://docs.google.com/spreadsheets/d/" +
                                 configuration.google_sheet_id + ")"
                     }
                 ]
@@ -99,7 +114,6 @@ class GoogleSheet:
 
     async def main(self):
         """ Download sheet and notify who will be next """
-        from pprint import pprint
         tables = await self.getTable()
         pprint(tables)
         now = datetime.now() + timedelta(hours=self.timedelta_tpe)

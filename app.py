@@ -1,12 +1,11 @@
 import os
-from slack_bolt.async_app import AsyncApp
 import logging
+from slack_bolt.async_app import AsyncApp
 
-import configuration
 from emoji_word import Emoji
+import configuration
+
 logging.basicConfig(level=logging.DEBUG)
-
-
 app = AsyncApp(token=configuration.token,
                signing_secret=configuration.signing_secret)
 
@@ -25,7 +24,8 @@ async def handle_app_home_opened_events(body, say, logger):
             'text': {
                 'type': "mrkdwn",
                 'text': "Hi. I'm c4bot, a specific bot for c4lab\n"
-                        "Here is my repo <https://github.com/linnil1/slackbot_c4bot>"
+                        "Here is my repo "
+                        "<https://github.com/linnil1/slackbot_c4bot>"
             },
         },
     ])
