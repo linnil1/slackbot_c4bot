@@ -1,8 +1,5 @@
-slackeventsapi
-slackclient
-requests
-flask
-google-api-python-client
-google-auth-httplib2
-google-auth-oauthlib
-apscheduler
+aiohttp
+slack_sdk
+slack_bolt
+aiogoogle
+aiocron
