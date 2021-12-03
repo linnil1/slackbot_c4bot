@@ -10,3 +10,4 @@ meeting_start_year = 2021        # Our meeting year and time
 meeting_start_hour = 12          # because only month and day are shown in the sheet
 meeting_start_minutes = 30       # so, it's bruteforce.
 meeting_channel = "lab-meeting"  # slack channel for posting meeting message
+meeting_cron = "0 9 * * 3"       # Every Wednesday 17:00

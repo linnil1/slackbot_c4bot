@@ -1,13 +1,25 @@
 import os
+import asyncio
 import logging
+import aiocron
+from aiohttp import web
 from slack_bolt.async_app import AsyncApp
 
 from emoji_word import Emoji
+from google_sheet import GoogleSheet
 import configuration
+
 
 logging.basicConfig(level=logging.DEBUG)
 app = AsyncApp(token=configuration.token,
                signing_secret=configuration.signing_secret)
+loop = asyncio.new_event_loop()
+
+
+@aiocron.crontab(configuration.meeting_cron, loop=loop)
+async def cron_meeting_notify():
+    """ Run meeting noficiation every week """
+    await GoogleSheet().main()
 
 
 @app.event("message")
@@ -53,4 +65,10 @@ async def command_emojiword(ack, respond, command, say, logger):
 
 
 if __name__ == "__main__":
-    app.start(port=configuration.web_port)
+    # Run aiocron with aiohttp
+    # The original app.start() will use two different event loop
+    # so I run app.start() by myself
+    # https://github.com/slackapi/bolt-python/blob/main/slack_bolt/app/async_server.py
+    web.run_app(app.server().web_app,
+                port=configuration.web_port,
+                loop=loop)

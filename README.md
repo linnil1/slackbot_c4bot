@@ -4,19 +4,14 @@
 * Meeting notification from Google Sheet
 * Add emoji of word(chinese) by command
 
-## Warning
-
-Setup a webserver like nginx or apache and trun on ssl(https), don't expose the endpoint with plain text
-
 ## Install
 
 ``` bash
 git clone git@github.com:linnil1/slackbot_c4bot.git
 cd slackbot_c4bot
-pip3 install requirments.txt
 ```
 
-Note: I test on python3.10
+Note: I tested on python3.10
 
 ## Setting
 
@@ -63,8 +58,20 @@ enable google sheet api and create a APIkey
 Edit `configuration.example.py` to `configuration.py`
 
 ``` bash
+pip3 install -r requirments.txt
 python3 app.py
 ```
+
+or run in docker
+
+``` bash
+docker build . -t linnil1/c4bot
+docker run -d --restart always -v $PWD:/app -w /app -p 80:80 --name c4bot linnil1/c4bot
+```
+
+## Warning
+
+Setup a webserver like nginx or apache and trun on ssl(https), don't expose the endpoint with plain text
 
 ## Result
 1. Emojiword
